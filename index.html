@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Her Special Day — Interactive Birthday Gift</title>
+  <!-- Google Fonts: Playfair Display & Montserrat -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    :root {
+      --bg-deep: #715411;
+      --bg-mid: #b18b25;
+      --bg-glow: #e9c85d;
+      --rose-accent: #e598ad;
+      --rose-bright: #f7c5d3;
+      --rose-glow: rgba(235, 148, 174, 0.45);
+      --glass-bg: rgba(255, 255, 255, 0.045);
+      --glass-border: rgba(255, 228, 236, 0.16);
+      --text-main: #fff4d2;
+      --text-muted: rgba(255, 237, 192, 0.78);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-text-size-adjust: 100%;
+      touch-action: manipulation;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      min-height: 100vh;
+      min-height: 100dvh;
+      background-color: var(--bg-deep);
+      background-image:
+        radial-gradient(circle at 50% 42%, var(--bg-glow) 0%, var(--bg-mid) 46%, var(--bg-deep) 100%);
+      color: var(--text-main);
+      font-family: 'Montserrat', sans-serif;
+      overflow-x: hidden;
+      user-select: none;
+    }
+
+    .font-serif-editorial {
+      font-family: 'Playfair Display', Georgia, serif;
+    }
+
+    .font-sans-clean {
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    /* Ambient Stardust & Bokeh Canvases */
+    #ambient-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100vh;
+      height: 100dvh;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* Screen Transitions */
+    .screen {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding:
+        max(1.5rem, env(safe-area-inset-top))
+        max(1.5rem, env(safe-area-inset-right))
+        max(1.5rem, env(safe-area-inset-bottom))
+        max(1.5rem, env(safe-area-inset-left));
+      z-index: 10;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(14px) scale(0.985);
+      transition: opacity 0.85s cubic-bezier(0.22, 1, 0.36, 1),
+                  transform 0.85s cubic-bezier(0.22, 1, 0.36, 1),
+                  visibility 0.85s;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-y: contain;
+    }
+
+    .screen.active {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0) scale(1);
+    }
+
+    .screen.exiting {
+      opacity: 0;
+      transform: translateY(-16px) scale(1.015);
+      pointer-events: none;
+    }
+
+    /* Micro Labels */
+    .micro-label {
+      font-size: 0.68rem;
+      font-weight: 500;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    /* Frosted Glass Cards */
+    .glass-card {
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0.025));
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    }
+
+    /* Countdown Timer Boxes */
+    .timer-box {
+      width: clamp(66px, 17vw, 102px);
+      height: clamp(74px, 19vw, 112px);
+      border-radius: 18px;
+      background: linear-gradient(160deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.025));
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 224, 234, 0.18);
+      box-shadow: 0 14px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.35s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+    }
+
+    .timer-box.unlocked {
+      border-color: rgba(247, 197, 211, 0.42);
+      box-shadow: 0 14px 36px rgba(229, 152, 173, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+
+    .timer-dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 9999px;
+      background: rgba(247, 197, 211, 0.45);
+      box-shadow: 0 0 8px rgba(247, 197, 211, 0.6);
+    }
+
+    /* Pill Buttons */
+    .pill-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.55rem;
+      padding: 0.78rem 1.75rem;
+      border-radius: 9999px;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-main);
+      background: linear-gradient(135deg, rgba(235, 148, 174, 0.28), rgba(182, 104, 130, 0.22));
+      border: 1px solid rgba(247, 197, 211, 0.38);
+      box-shadow: 0 8px 26px rgba(0, 0, 0, 0.32), 0 0 22px rgba(229, 152, 173, 0.18);
+      cursor: pointer;
+      transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+      backdrop-filter: blur(10px);
+    }
+
+    .pill-btn:hover:not(:disabled) {
+      transform: translateY(-2px) scale(1.025);
+      background: linear-gradient(135deg, rgba(235, 148, 174, 0.44), rgba(196, 114, 142, 0.34));
+      border-color: rgba(255, 224, 234, 0.68);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4), 0 0 28px rgba(235, 148, 174, 0.42);
+    }
+
+    .pill-btn:active:not(:disabled) {
+      transform: translateY(0) scale(0.98);
+    }
+
+    .pill-btn:disabled {
+      opacity: 0.52;
+      cursor: not-allowed;
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.14);
+      box-shadow: none;
+    }
+
+    .pill-btn.pulse-ready {
+      animation: softRosePulse 2.2s infinite ease-in-out;
+    }
+
+    @keyframes softRosePulse {
+      0%, 100% {
+        box-shadow: 0 8px 26px rgba(0, 0, 0, 0.32), 0 0 18px rgba(235, 148, 174, 0.25);
+      }
+      50% {
+        box-shadow: 0 10px 32px rgba(0, 0, 0, 0.38), 0 0 34px rgba(247, 197, 211, 0.58);
+      }
+    }
+
+    /* Screen 2: 3D Styled Interactive Gift Box */
+    .gift-stage {
+      position: relative;
+      width: 190px;
+      height: 190px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .gift-aura {
+      position: absolute;
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(244, 176, 198, 0.36) 0%, rgba(214, 122, 152, 0.12) 50%, transparent 72%);
+      filter: blur(12px);
+      animation: auraBreathe 3s infinite ease-in-out;
+      pointer-events: none;
+    }
+
+    @keyframes auraBreathe {
+      0%, 100% { transform: scale(0.95); opacity: 0.78; }
+      50% { transform: scale(1.12); opacity: 1; }
+    }
+
+    .gift-wrapper {
+      position: relative;
+      width: 118px;
+      height: 112px;
+      animation: giftFloat 3.2s infinite ease-in-out;
+      transition: transform 0.3s ease;
+    }
+
+    .gift-stage:hover .gift-wrapper {
+      transform: scale(1.06);
+    }
+
+    @keyframes giftFloat {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-7px); }
+    }
+
+    .gift-base {
+      position: absolute;
+      bottom: 0;
+      left: 7px;
+      width: 104px;
+      height: 82px;
+      border-radius: 10px;
+      background: linear-gradient(145deg, #d88ca3 0%, #9f566e 60%, #7d3e53 100%);
+      box-shadow: 0 18px 34px rgba(0, 0, 0, 0.55), inset 0 2px 6px rgba(255, 235, 240, 0.35);
+      overflow: hidden;
+    }
+
+    .gift-base::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      width: 20px;
+      transform: translateX(-50%);
+      background: linear-gradient(90deg, #fce2ea, #f3b5c7, #fce2ea);
+      box-shadow: 0 0 12px rgba(255, 230, 238, 0.45);
+    }
+
+    .gift-lid {
+      position: absolute;
+      top: 14px;
+      left: 0;
+      width: 118px;
+      height: 26px;
+      border-radius: 8px;
+      background: linear-gradient(145deg, #e79fb5 0%, #b3667f 100%);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.38), inset 0 2px 4px rgba(255, 240, 245, 0.45);
+      transform-origin: right bottom;
+      transition: transform 0.95s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.85s ease;
+      z-index: 3;
+    }
+
+    .gift-lid::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      width: 20px;
+      transform: translateX(-50%);
+      background: linear-gradient(90deg, #fff0f5, #f5bfd0, #fff0f5);
+    }
+
+    /* Silky Bow */
+    .gift-bow {
+      position: absolute;
+      top: -16px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 56px;
+      height: 22px;
+      z-index: 4;
+    }
+
+    .bow-loop-left, .bow-loop-right {
+      position: absolute;
+      top: 2px;
+      width: 26px;
+      height: 18px;
+      border-radius: 50% 50% 15% 50%;
+      background: linear-gradient(135deg, #fff2f6 0%, #f1b2c5 100%);
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
+    }
+
+    .bow-loop-left {
+      left: 2px;
+      transform: rotate(-16deg);
+    }
+
+    .bow-loop-right {
+      right: 2px;
+      border-radius: 50% 50% 50% 15%;
+      transform: rotate(16deg);
+    }
+
+    .bow-knot {
+      position: absolute;
+      top: 6px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #ffffff, #eba4ba);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Gift Opening Animation */
+    .gift-wrapper.opened .gift-lid {
+      transform: translate(38px, -68px) rotate(42deg) scale(0.92);
+      opacity: 0;
+    }
+
+    .gift-wrapper.opened .gift-base {
+      animation: boxPop 0.6s ease forwards;
+    }
+
+    @keyframes boxPop {
+      0% { transform: scale(1); }
+      40% { transform: scale(1.08, 0.94); }
+      100% { transform: scale(1); }
+    }
+
+    /* Screen 4: Love Letter Typewriter Scroll Area */
+    .letter-scroll {
+      max-height: 52vh;
+      max-height: 52dvh;
+      overflow-y: auto;
+      padding-right: 0.5rem;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(247, 197, 211, 0.35) transparent;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .letter-scroll::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .letter-scroll::-webkit-scrollbar-thumb {
+      background: rgba(247, 197, 211, 0.35);
+      border-radius: 9999px;
+    }
+
+    .typing-cursor {
+      display: inline-block;
+      width: 2px;
+      height: 1.05em;
+      background-color: var(--rose-bright);
+      margin-left: 3px;
+      vertical-align: text-bottom;
+      animation: blinkCursor 0.85s infinite;
+    }
+
+    @keyframes blinkCursor {
+      0%, 49% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+
+    /* Floating Music Pill */
+    .floating-music-pill {
+      position: fixed;
+      bottom: calc(18px + env(safe-area-inset-bottom));
+      right: calc(18px + env(safe-area-inset-right));
+      z-index: 50;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: 9999px;
+      background: rgba(28, 16, 23, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(247, 197, 211, 0.22);
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    }
+
+    .floating-music-pill:hover {
+      border-color: rgba(247, 197, 211, 0.5);
+      color: var(--text-main);
+    }
+
+    .music-bars {
+      display: inline-flex;
+      align-items: flex-end;
+      gap: 2px;
+      height: 11px;
+    }
+
+    .music-bars span {
+      width: 2px;
+      background: var(--rose-accent);
+      border-radius: 2px;
+      height: 4px;
+      transition: height 0.2s ease;
+    }
+
+    .floating-music-pill.playing .music-bars span:nth-child(1) { animation: barBounce 0.7s infinite ease-in-out; }
+    .floating-music-pill.playing .music-bars span:nth-child(2) { animation: barBounce 0.55s infinite 0.15s ease-in-out; }
+    .floating-music-pill.playing .music-bars span:nth-child(3) { animation: barBounce 0.8s infinite 0.3s ease-in-out; }
+
+    @keyframes barBounce {
+      0%, 100% { height: 3px; }
+      50% { height: 11px; }
+    }
+
+    @media (max-width: 380px) {
+      .screen {
+        padding:
+          max(1rem, env(safe-area-inset-top))
+          max(1rem, env(safe-area-inset-right))
+          max(1rem, env(safe-area-inset-bottom))
+          max(1rem, env(safe-area-inset-left));
+      }
+
+      .timer-box {
+        width: clamp(52px, 16vw, 66px);
+        height: 72px;
+      }
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- Ambient Floating Bokeh Hearts & Stardust Particles -->
+  <canvas id="ambient-canvas"></canvas>
+
+  <!-- Persistent Bottom-Right Floating Music Indicator -->
+  <audio id="romantic-melody-audio" src="yung%20kai%20-%20Blue%20Piano%20Cover%20Sheet%20Music.mp3" preload="none" loop></audio>
+  <button id="music-toggle-btn" class="floating-music-pill" aria-label="Toggle yung kai - Blue background melody">
+    <div class="music-bars">
+      <span></span><span></span><span></span>
+    </div>
+    <span id="music-status-text">yung kai - Blue • paused</span>
+  </button>
+
+  <!-- =========================================================
+       SCREEN 1: COUNTDOWN TIMER ("Her Special Day is Coming")
+       ========================================================= -->
+  <section id="screen-1" class="screen active">
+    <div class="max-w-xl w-full text-center flex flex-col items-center">
+      <p class="micro-label mb-3">• COUNTING DOWN •</p>
+
+      <h1 class="font-serif-editorial text-4xl sm:text-6xl font-bold tracking-tight text-white leading-tight">
+        <span id="s1-headline-main">Her Special Day</span>
+        <span id="s1-headline-sub" class="block font-normal italic text-3xl sm:text-5xl text-[#ffe7a3] mt-1">
+          is Coming
+        </span>
+      </h1>
+
+      <p id="s1-subtitle" class="font-serif-editorial italic text-xs sm:text-sm text-[#f5df9a]/80 mt-3 mb-8">
+        Someone is impatiently waiting for your moment 🤍
+      </p>
+
+      <!-- 4 Frosted Glass Countdown Boxes -->
+      <div class="flex items-center justify-center gap-2 sm:gap-4 mb-7">
+        <div class="timer-box" id="box-days">
+          <span id="cd-days" class="font-serif-editorial text-2xl sm:text-4xl font-semibold text-white">00</span>
+          <span class="text-[9px] sm:text-[10px] tracking-[0.24em] uppercase text-[#f5df9a]/70 mt-1">DAYS</span>
+        </div>
+
+        <span class="timer-dot"></span>
+
+        <div class="timer-box" id="box-hours">
+          <span id="cd-hours" class="font-serif-editorial text-2xl sm:text-4xl font-semibold text-white">00</span>
+          <span class="text-[9px] sm:text-[10px] tracking-[0.24em] uppercase text-[#f5df9a]/70 mt-1">HOURS</span>
+        </div>
+
+        <span class="timer-dot"></span>
+
+        <div class="timer-box" id="box-minutes">
+          <span id="cd-minutes" class="font-serif-editorial text-2xl sm:text-4xl font-semibold text-white">00</span>
+          <span class="text-[9px] sm:text-[10px] tracking-[0.24em] uppercase text-[#f5df9a]/70 mt-1">MINUTES</span>
+        </div>
+
+        <span class="timer-dot"></span>
+
+        <div class="timer-box" id="box-seconds">
+          <span id="cd-seconds" class="font-serif-editorial text-2xl sm:text-4xl font-semibold text-white">10</span>
+          <span class="text-[9px] sm:text-[10px] tracking-[0.24em] uppercase text-[#f5df9a]/70 mt-1">SECONDS</span>
+        </div>
+      </div>
+
+      <!-- Dynamic Status Indicator -->
+      <p id="s1-status-text" class="font-serif-editorial italic text-xs sm:text-sm text-[#ffd76f] mb-5 transition-all duration-500">
+        A few seconds left... 💗
+      </p>
+
+      <!-- Locked / Unlocked Pill Action Button -->
+      <button id="open-gift-btn" class="pill-btn" disabled>
+        <span id="open-gift-btn-icon">🔒</span>
+        <span id="open-gift-btn-label">WAIT UNTIL THE TIME COMES</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       SCREEN 2: YELLOW PASSCODE LOCK
+       ========================================================= -->
+  <section id="screen-2" class="screen">
+    <div class="w-full max-w-sm text-center flex flex-col items-center px-4">
+      <div class="flex h-20 w-20 items-center justify-center rounded-full border border-amber-100/35 bg-amber-100/15 shadow-[0_0_40px_rgba(255,230,150,0.28)] mb-6">
+        <span class="text-4xl" aria-hidden="true">🔐</span>
+      </div>
+      <p class="micro-label mb-3">• A LITTLE SURPRISE •</p>
+      <h1 class="font-serif-editorial text-4xl sm:text-5xl font-bold text-white leading-tight">
+        Locked
+      </h1>
+      <p class="font-serif-editorial italic text-sm sm:text-base text-[#fff0b5] mt-3 mb-7">
+        Enter the 4-digit passcode to open your gift
+      </p>
+
+      <form id="lockscreen-form" class="glass-card w-full rounded-2xl p-5 text-left">
+        <label for="lockscreen-password" class="block text-[#ffd76f] uppercase tracking-[0.18em] text-[10px] font-semibold mb-2">
+          Passcode
+        </label>
+        <input
+          id="lockscreen-password"
+          type="password"
+          inputmode="numeric"
+          pattern="[0-9]{4}"
+          maxlength="4"
+          autocomplete="off"
+          aria-describedby="lockscreen-error"
+          class="w-full rounded-xl bg-black/20 border border-amber-100/25 px-4 py-3 text-center text-2xl tracking-[0.5em] text-[#fff4d2] placeholder:text-white/35 focus:outline-none focus:border-[#ffe7a3] focus:ring-2 focus:ring-amber-100/20"
+          placeholder="••••"
+          required
+        />
+        <p id="lockscreen-error" class="text-amber-100 text-xs text-center mt-3 min-h-4 hidden" role="alert" aria-live="polite">
+          That passcode doesn't match. Try again.
+        </p>
+        <button type="submit" class="pill-btn w-full mt-4">
+          <span>UNLOCK GIFT ▸</span>
+        </button>
+      </form>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       SCREEN 3: INTERACTIVE GIFT BOX ("Something For You")
+       ========================================================= -->
+  <section id="screen-3" class="screen">
+    <div class="max-w-md w-full text-center flex flex-col items-center">
+      <p class="micro-label mb-10">• SOMETHING FOR YOU •</p>
+
+      <div id="gift-box-trigger" class="gift-stage my-2" role="button" tabindex="0" aria-label="Open your birthday gift">
+        <div class="gift-aura"></div>
+        <div id="gift-wrapper" class="gift-wrapper">
+          <div class="gift-lid">
+            <div class="gift-bow">
+              <div class="bow-loop-left"></div>
+              <div class="bow-loop-right"></div>
+              <div class="bow-knot"></div>
+            </div>
+          </div>
+          <div class="gift-base"></div>
+        </div>
+      </div>
+
+      <p class="font-serif-editorial italic text-xs sm:text-sm text-[#f3dc98]/85 mt-10 tracking-wide">
+        ✨ Click to open your gift ✨
+      </p>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       SCREEN 4: HERO TITLE REVEAL
+       ========================================================= -->
+  <section id="screen-4" class="screen">
+    <!-- Center Hero Content -->
+    <div class="relative z-10 max-w-lg w-full text-center flex flex-col items-center px-4">
+      <p class="micro-label mb-4">• A LETTER JUST FOR YOU •</p>
+
+      <h1 class="font-serif-editorial text-5xl sm:text-7xl font-bold text-white leading-[1.06] tracking-tight">
+        <span class="block">Your</span>
+        <span class="block text-[#ffedb2]">Special Day</span>
+      </h1>
+
+      <p class="font-serif-editorial italic text-sm sm:text-base text-[#f5df9a]/85 mt-4">
+        Created by Ian
+      </p>
+
+      <!-- Thin Horizontal Divider with Tiny Sparkle -->
+      <div class="flex items-center justify-center gap-3 w-48 my-6 opacity-65">
+        <span class="h-[1px] flex-1 bg-gradient-to-r from-transparent to-[#f7c5d3]"></span>
+        <span class="text-[10px] text-[#ffd76f]">✦</span>
+        <span class="h-[1px] flex-1 bg-gradient-to-l from-transparent to-[#f7c5d3]"></span>
+      </div>
+
+      <button id="read-letter-btn" class="pill-btn pulse-ready">
+        <span>♥</span>
+        <span>READ MY LETTER ▸</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- =========================================================
+       SCREEN 5: TYPEWRITER LOVE LETTER ("Happy Birthday")
+       ========================================================= -->
+  <section id="screen-5" class="screen">
+    <div class="w-full max-w-[680px] flex flex-col items-center">
+      <h2 class="font-serif-editorial text-3xl sm:text-5xl font-bold text-white mb-6 text-center">
+        Happy Birthday Atee ellanggeee💖
+      </h2>
+
+      <!-- Frosted Dark-Mauve Glass Card -->
+      <div id="letter-card" class="glass-card w-full rounded-[20px] p-6 sm:p-9 text-left relative cursor-pointer" title="Click anywhere on card to finish typing immediately">
+        <div id="letter-scroll-container" class="letter-scroll">
+          <p id="letter-salutation" class="text-xs sm:text-sm font-semibold tracking-[0.18em] uppercase text-[#ffd76f] mb-4"></p>
+          <div id="letter-body-output" class="font-serif-editorial text-sm sm:text-[15.5px] leading-[1.85] text-[#fff4d2]/95 space-y-4 whitespace-pre-line"></div>
+          <span id="letter-cursor" class="typing-cursor"></span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- =========================================================
+       DISCREET CUSTOMIZE MODAL PANEL
+       ========================================================= -->
+  <div id="customize-modal" class="fixed inset-0 z-[80] bg-black/75 backdrop-blur-md hidden items-center justify-center p-4">
+    <div class="glass-card bg-[#20121a]/95 w-full max-w-lg max-h-[88vh] overflow-y-auto rounded-2xl p-6 text-left border border-[#f7c5d3]/25 shadow-2xl">
+      <div class="flex items-center justify-between pb-3 mb-4 border-b border-white/10">
+        <div>
+          <h3 class="font-serif-editorial text-xl font-bold text-white">Personalize Her Gift</h3>
+          <p class="text-[11px] text-[#f5df9a]/75">Edit any details below and apply immediately</p>
+        </div>
+        <button id="close-customize-btn" class="text-white/70 hover:text-white text-xl leading-none px-2">&times;</button>
+      </div>
+
+      <div class="space-y-4 text-xs">
+        <!-- Recipient Title & Salutation -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[#ffd76f] uppercase tracking-wider text-[10px] mb-1">Hero Headline</label>
+            <input id="cfg-hero-title" type="text" value="Her Special Day" class="w-full rounded-lg bg-white/10 border border-white/15 px-3 py-2 text-white focus:outline-none focus:border-[#f7c5d3]" />
+          </div>
+          <div>
+            <label class="block text-[#ffd76f] uppercase tracking-wider text-[10px] mb-1">Letter Greeting</label>
+            <input id="cfg-salutation" type="text" value="HAPPY BIRTHDAY ATE ELLA 🤍" class="w-full rounded-lg bg-white/10 border border-white/15 px-3 py-2 text-white focus:outline-none focus:border-[#f7c5d3]" />
+          </div>
+        </div>
+
+        <!-- Countdown Mode -->
+        <div>
+          <label class="block text-[#ffd76f] uppercase tracking-wider text-[10px] mb-1">Countdown Mode</label>
+          <div class="flex flex-col sm:flex-row gap-2">
+            <select id="cfg-countdown-mode" class="rounded-lg bg-[#2d1a25] border border-white/15 px-3 py-2 text-white focus:outline-none">
+              <option value="demo">10-Second Instant Demo (Default)</option>
+              <option value="custom">Custom Target Date & Time</option>
+            </select>
+            <input id="cfg-target-date" type="datetime-local" class="flex-1 rounded-lg bg-white/10 border border-white/15 px-3 py-2 text-white focus:outline-none hidden" />
+          </div>
+        </div>
+
+        <!-- Love Letter Body -->
+        <div>
+          <label class="block text-[#ffd76f] uppercase tracking-wider text-[10px] mb-1">Love Letter Message</label>
+          <textarea id="cfg-letter-body" rows="5" class="w-full rounded-lg bg-white/10 border border-white/15 px-3 py-2 text-white leading-relaxed focus:outline-none focus:border-[#f7c5d3]"></textarea>
+        </div>
+
+      </div>
+
+      <div class="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-white/10">
+        <button id="cancel-customize-btn" class="px-4 py-2 rounded-full text-xs text-white/75 hover:text-white">Cancel</button>
+        <button id="save-customize-btn" class="pill-btn">Save & Restart</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ==========================================================================
+       1. STATE & DEFAULT ROMANTIC CONTENT
+       ========================================================================== */
+    const DEFAULT_LETTER = `Hii atee, ella, Blessed Birthday sayooo. 25 kana halaaa, charizz. HAHAHAH, ano bang sasabihin ko?
+
+Anyway, First of all, thank you po sa pagiging ate mo sakin. Ramdam na ramdam ko yunn every time na nakakasama kita, nakaka usap, iba ga yung feeling. Although Hindi kita kapatid sa dugo, pero ramdam ko yung pagiging bunso ko sayoo. Hindi pa naman ito ang last na letter ko, madami pa, abang kalang dyan. Ma effort ako sa ganitong bagay HAHAHA!
+
+Jokes aside, Im so Blessed and super thankful that you've came to my life po, para maging kapatid ko spiritually. Andami kopong natututunan sayo, naging aral, kaya noong nawala ka, diko makaka limutan yon, ate. Noong nag work ka sa lipa, medyo nag iba yung paling ng hangin sakin, kase nalungkot ako that time. Hinahanap kita lagi noon, kase wala akong kakulitan masyado, wala akong makasama kapag mag sstay sa church. Kaya, sobrang saya ko noong nalaman ko na work from home kana, and ayon ay sa tulong ng Lord. At deserve mo yun, atee. 🤍
+
+And Im always here, praying for you. Although hindi ko Alam lahat ng battles mo, pinag dadaanan mo wa buhay, but i always pray for you sa Lord na tulungan ka nya, palakasin, patatagin kapa nya, ano man yung mga battles mo, kase i know na hindi biro. Sa bahay nyo palang, battle mona yon agad. But don't worry po, madami kaming nag pe pray sayo, ate. :))
+
+And before mag tapos tong letter na ito, I just want to say that, Thank you po sa mga payo, sa mga times na napag sasabihan moko. I know po na para sakin yon, and sobrang appreciate kopo yun, para sa growth ko din.
+
+Anyway, Happy birthday poo, ate, for being my best ate. Naka plano na sana na ako dapat ay ililibre ka sa labas, kaso lang ay di umabot yung work ko ng November, huhu. Bawi nalang po ako next timee haa. Godbless po sayo and sa Family mo. Always be strong, ate haa, kaya mo yan sa mga battles mo. Im here lang din if you ever need anything po, wag lang pera, at pareho tayong wala non sa ngayon HAHAHA.
+
+Anyway po, Blessed birthday po ulit, ate. Love lots. 🤍✨`;
+
+    const appState = {
+      currentScreen: 1,
+      heroTitle: 'Her Special Day',
+      salutation: 'HAPPY BIRTHDAY ATE ELLA 🤍',
+      letterBody: DEFAULT_LETTER,
+      countdownMode: 'demo', // 'demo' or 'custom'
+      customTargetTime: null,
+      letterTypingTimer: null,
+      letterDone: false
+    };
+
+    /* ==========================================================================
+       2. AMBIENT PARTICLE SYSTEM (BOKEH HEARTS + TWINKLING STARDUST)
+       ========================================================================== */
+    const ambientCanvas = document.getElementById('ambient-canvas');
+    const actx = ambientCanvas.getContext('2d');
+    let particles = [];
+    let bokehHearts = [];
+    let burstSparkles = [];
+
+    function resizeAmbient() {
+      ambientCanvas.width = window.innerWidth;
+      ambientCanvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeAmbient);
+    resizeAmbient();
+
+    function initAmbientParticles() {
+      particles = [];
+      bokehHearts = [];
+      const starCount = Math.min(75, Math.floor((window.innerWidth * window.innerHeight) / 16000));
+      for (let i = 0; i < starCount; i++) {
+        particles.push({
+          x: Math.random() * ambientCanvas.width,
+          y: Math.random() * ambientCanvas.height,
+          r: Math.random() * 1.7 + 0.5,
+          vy: -(Math.random() * 0.22 + 0.06),
+          vx: (Math.random() - 0.5) * 0.14,
+          phase: Math.random() * Math.PI * 2,
+          speed: Math.random() * 0.03 + 0.015
+        });
+      }
+
+      for (let i = 0; i < 14; i++) {
+        bokehHearts.push({
+          x: Math.random() * ambientCanvas.width,
+          y: Math.random() * ambientCanvas.height,
+          size: Math.random() * 26 + 14,
+          vy: -(Math.random() * 0.35 + 0.12),
+          vx: (Math.random() - 0.5) * 0.2,
+          alpha: Math.random() * 0.09 + 0.03,
+          wobble: Math.random() * Math.PI * 2
+        });
+      }
+    }
+
+    function drawSoftHeart(ctx, x, y, size, alpha) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.beginPath();
+      const s = size * 0.5;
+      ctx.moveTo(0, s * 0.35);
+      ctx.bezierCurveTo(-s, -s * 0.45, -s * 1.4, s * 0.45, 0, s * 1.35);
+      ctx.bezierCurveTo(s * 1.4, s * 0.45, s, -s * 0.45, 0, s * 0.35);
+      ctx.closePath();
+      ctx.fillStyle = `rgba(255, 205, 87, ${alpha})`;
+      ctx.shadowColor = `rgba(255, 205, 87, ${alpha * 1.5})`;
+      ctx.shadowBlur = 18;
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function spawnGiftBurst(cx, cy) {
+      for (let i = 0; i < 42; i++) {
+        const angle = (Math.PI * 2 * i) / 42 + (Math.random() - 0.5) * 0.25;
+        const speed = Math.random() * 4.5 + 1.8;
+        burstSparkles.push({
+          x: cx,
+          y: cy,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 1.2,
+          r: Math.random() * 2.8 + 1.2,
+          life: 1,
+          decay: Math.random() * 0.02 + 0.015,
+          color: i % 2 === 0 ? '255, 224, 236' : '255, 212, 168'
+        });
+      }
+    }
+
+    function renderAmbientLoop() {
+      actx.clearRect(0, 0, ambientCanvas.width, ambientCanvas.height);
+
+      // Draw rising blurred bokeh hearts (stronger on Screen 3)
+      const heartBoost = appState.currentScreen === 3 ? 1.85 : 1.0;
+      bokehHearts.forEach((h) => {
+        h.y += h.vy;
+        h.wobble += 0.012;
+        h.x += Math.sin(h.wobble) * 0.25 + h.vx;
+        if (h.y < -60) {
+          h.y = ambientCanvas.height + 50;
+          h.x = Math.random() * ambientCanvas.width;
+        }
+        drawSoftHeart(actx, h.x, h.y, h.size, Math.min(0.24, h.alpha * heartBoost));
+      });
+
+      // Draw twinkling stardust particles
+      particles.forEach((p) => {
+        p.y += p.vy;
+        p.x += p.vx;
+        p.phase += p.speed;
+        if (p.y < -10) p.y = ambientCanvas.height + 10;
+        if (p.x < -10) p.x = ambientCanvas.width + 10;
+        if (p.x > ambientCanvas.width + 10) p.x = -10;
+
+        const twinkle = 0.25 + ((Math.sin(p.phase) + 1) * 0.5) * 0.65;
+        actx.beginPath();
+        actx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        actx.fillStyle = `rgba(255, 236, 242, ${twinkle})`;
+        actx.fill();
+      });
+
+      // Draw gift explosion sparkles
+      for (let i = burstSparkles.length - 1; i >= 0; i--) {
+        const sp = burstSparkles[i];
+        sp.x += sp.vx;
+        sp.y += sp.vy;
+        sp.vy += 0.04;
+        sp.life -= sp.decay;
+        if (sp.life <= 0) {
+          burstSparkles.splice(i, 1);
+          continue;
+        }
+        actx.beginPath();
+        actx.arc(sp.x, sp.y, sp.r, 0, Math.PI * 2);
+        actx.fillStyle = `rgba(${sp.color}, ${sp.life})`;
+        actx.fill();
+      }
+
+      requestAnimationFrame(renderAmbientLoop);
+    }
+
+    initAmbientParticles();
+    renderAmbientLoop();
+
+    /* ==========================================================================
+       3. ROMANTIC BACKGROUND MELODY
+       ========================================================================== */
+    const romanticAudio = document.getElementById('romantic-melody-audio');
+    let isMusicPlaying = false;
+
+    function startRomanticMusic() {
+      const playRequest = romanticAudio.play();
+      if (playRequest) {
+        playRequest.catch((error) => {
+          console.error('Unable to play yung kai - Blue:', error);
+        });
+      }
+    }
+
+    function stopRomanticMusic() {
+      romanticAudio.pause();
+    }
+
+    function updateMusicUI() {
+      const btn = document.getElementById('music-toggle-btn');
+      const label = document.getElementById('music-status-text');
+      isMusicPlaying = !romanticAudio.paused;
+      if (isMusicPlaying) {
+        btn.classList.add('playing');
+        label.textContent = 'yung kai - Blue • playing';
+      } else {
+        btn.classList.remove('playing');
+        label.textContent = 'yung kai - Blue • paused';
+      }
+    }
+
+    romanticAudio.addEventListener('play', updateMusicUI);
+    romanticAudio.addEventListener('pause', updateMusicUI);
+
+    document.getElementById('music-toggle-btn').addEventListener('click', () => {
+      if (isMusicPlaying) {
+        stopRomanticMusic();
+      } else {
+        startRomanticMusic();
+      }
+    });
+
+    /* ==========================================================================
+       4. SCREEN NAVIGATION HELPER
+       ========================================================================== */
+    function goToScreen(targetNum) {
+      const currentEl = document.getElementById(`screen-${appState.currentScreen}`);
+      const nextEl = document.getElementById(`screen-${targetNum}`);
+      if (!nextEl || appState.currentScreen === targetNum) return;
+
+      currentEl.classList.add('exiting');
+      currentEl.classList.remove('active');
+
+      setTimeout(() => {
+        currentEl.classList.remove('exiting');
+        appState.currentScreen = targetNum;
+        nextEl.classList.add('active');
+
+        // Screen-specific entry hooks
+        if (targetNum === 5) {
+          startLoveLetterTypewriter();
+        }
+      }, 420);
+    }
+
+    /* ==========================================================================
+       5. SCREEN 1: COUNTDOWN LOGIC (10-SEC DEMO OR CUSTOM DATE)
+       ========================================================================== */
+    let countdownInterval = null;
+    const DEMO_COUNTDOWN_SECONDS = 10;
+    const LOCK_SCREEN_PASSWORD = '1125';
+    let demoRemainingSeconds = DEMO_COUNTDOWN_SECONDS;
+
+    function padZero(num) {
+      return String(Math.max(0, Math.floor(num))).padStart(2, '0');
+    }
+
+    function unlockCountdownUI() {
+      document.getElementById('cd-days').textContent = '00';
+      document.getElementById('cd-hours').textContent = '00';
+      document.getElementById('cd-minutes').textContent = '00';
+      document.getElementById('cd-seconds').textContent = '00';
+
+      ['box-days', 'box-hours', 'box-minutes', 'box-seconds'].forEach((id) => {
+        document.getElementById(id).classList.add('unlocked');
+      });
+
+      const statusEl = document.getElementById('s1-status-text');
+      statusEl.textContent = 'Today is your special day! ✨';
+      statusEl.classList.add('scale-105');
+
+      const btn = document.getElementById('open-gift-btn');
+      btn.disabled = false;
+      btn.classList.add('pulse-ready');
+      document.getElementById('open-gift-btn-icon').textContent = '🔐';
+      document.getElementById('open-gift-btn-label').textContent = 'ENTER PASSCODE ▸';
+    }
+
+    function startCountdown() {
+      clearInterval(countdownInterval);
+
+      // Reset UI to locked state
+      ['box-days', 'box-hours', 'box-minutes', 'box-seconds'].forEach((id) => {
+        document.getElementById(id).classList.remove('unlocked');
+      });
+      const btn = document.getElementById('open-gift-btn');
+      btn.disabled = true;
+      btn.classList.remove('pulse-ready');
+      document.getElementById('open-gift-btn-icon').textContent = '🔒';
+      document.getElementById('open-gift-btn-label').textContent = 'WAIT UNTIL THE TIME COMES';
+      document.getElementById('s1-status-text').textContent = 'A few seconds left... 💗';
+
+      if (appState.countdownMode === 'demo') {
+        demoRemainingSeconds = DEMO_COUNTDOWN_SECONDS;
+        document.getElementById('cd-days').textContent = '00';
+        document.getElementById('cd-hours').textContent = '00';
+        document.getElementById('cd-minutes').textContent = '00';
+        document.getElementById('cd-seconds').textContent = padZero(demoRemainingSeconds);
+
+        countdownInterval = setInterval(() => {
+          demoRemainingSeconds--;
+          if (demoRemainingSeconds <= 0) {
+            clearInterval(countdownInterval);
+            unlockCountdownUI();
+          } else {
+            document.getElementById('cd-seconds').textContent = padZero(demoRemainingSeconds);
+          }
+        }, 1000);
+      } else if (appState.customTargetTime) {
+        const updateCustom = () => {
+          const diff = appState.customTargetTime - Date.now();
+          if (diff <= 0) {
+            clearInterval(countdownInterval);
+            unlockCountdownUI();
+            return;
+          }
+          const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+          const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+          const mins = Math.floor((diff / (1000 * 60)) % 60);
+          const secs = Math.floor((diff / 1000) % 60);
+
+          document.getElementById('cd-days').textContent = padZero(days);
+          document.getElementById('cd-hours').textContent = padZero(hours);
+          document.getElementById('cd-minutes').textContent = padZero(mins);
+          document.getElementById('cd-seconds').textContent = padZero(secs);
+          document.getElementById('s1-status-text').textContent = 'Counting every heartbeat until your moment... 💗';
+        };
+        updateCustom();
+        countdownInterval = setInterval(updateCustom, 1000);
+      }
+    }
+
+    const lockPasswordInput = document.getElementById('lockscreen-password');
+    const lockPasswordError = document.getElementById('lockscreen-error');
+
+    document.getElementById('lockscreen-form').addEventListener('submit', (event) => {
+      event.preventDefault();
+      if (lockPasswordInput.value === LOCK_SCREEN_PASSWORD) {
+        lockPasswordError.classList.add('hidden');
+        lockPasswordInput.removeAttribute('aria-invalid');
+        lockPasswordInput.value = '';
+        goToScreen(3);
+        return;
+      }
+
+      lockPasswordError.classList.remove('hidden');
+      lockPasswordInput.setAttribute('aria-invalid', 'true');
+      lockPasswordInput.value = '';
+      lockPasswordInput.focus();
+    });
+
+    lockPasswordInput.addEventListener('input', () => {
+      lockPasswordError.classList.add('hidden');
+      lockPasswordInput.removeAttribute('aria-invalid');
+    });
+
+    document.getElementById('open-gift-btn').addEventListener('click', () => {
+      // Auto-start romantic melody on first meaningful user click
+      if (!isMusicPlaying) startRomanticMusic();
+      goToScreen(2);
+    });
+
+    /* ==========================================================================
+       6. SCREEN 3: INTERACTIVE GIFT BOX OPENING
+       ========================================================================== */
+    const giftTrigger = document.getElementById('gift-box-trigger');
+    let giftOpened = false;
+
+    function handleOpenGiftBox() {
+      if (giftOpened) return;
+      giftOpened = true;
+      if (!isMusicPlaying) startRomanticMusic();
+
+      const wrapper = document.getElementById('gift-wrapper');
+      wrapper.classList.add('opened');
+
+      const rect = giftTrigger.getBoundingClientRect();
+      spawnGiftBurst(rect.left + rect.width / 2, rect.top + rect.height / 2);
+
+      setTimeout(() => {
+        goToScreen(4);
+        setTimeout(() => {
+          wrapper.classList.remove('opened');
+          giftOpened = false;
+        }, 1000);
+      }, 950);
+    }
+
+    giftTrigger.addEventListener('click', handleOpenGiftBox);
+    giftTrigger.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        handleOpenGiftBox();
+      }
+    });
+
+    document.getElementById('read-letter-btn').addEventListener('click', () => goToScreen(5));
+
+    /* ==========================================================================
+       7. SCREEN 5: TYPEWRITER LOVE LETTER
+       ========================================================================== */
+    function finishLetterImmediately() {
+      clearInterval(appState.letterTypingTimer);
+      appState.letterDone = true;
+      document.getElementById('letter-salutation').textContent = appState.salutation;
+      document.getElementById('letter-body-output').textContent = appState.letterBody;
+      document.getElementById('letter-cursor').style.display = 'none';
+
+    }
+
+    function startLoveLetterTypewriter() {
+      clearInterval(appState.letterTypingTimer);
+      appState.letterDone = false;
+
+      const salEl = document.getElementById('letter-salutation');
+      const bodyEl = document.getElementById('letter-body-output');
+      const cursorEl = document.getElementById('letter-cursor');
+      const scrollBox = document.getElementById('letter-scroll-container');
+      salEl.textContent = '';
+      bodyEl.textContent = '';
+      cursorEl.style.display = 'inline-block';
+
+      const fullSalutation = appState.salutation;
+      const fullBody = appState.letterBody;
+      let salIdx = 0;
+      let bodyIdx = 0;
+
+      appState.letterTypingTimer = setInterval(() => {
+        if (salIdx < fullSalutation.length) {
+          salEl.textContent += fullSalutation[salIdx++];
+        } else if (bodyIdx < fullBody.length) {
+          bodyEl.textContent += fullBody[bodyIdx++];
+          scrollBox.scrollTop = scrollBox.scrollHeight;
+        } else {
+          finishLetterImmediately();
+        }
+      }, 24);
+    }
+
+    document.getElementById('letter-card').addEventListener('click', () => {
+      if (!appState.letterDone) {
+        finishLetterImmediately();
+      }
+    });
+
+    /* ==========================================================================
+       8. CUSTOMIZE MODAL HANDLERS
+       ========================================================================== */
+    const customizeModal = document.getElementById('customize-modal');
+    const cfgModeSelect = document.getElementById('cfg-countdown-mode');
+    const cfgDateInput = document.getElementById('cfg-target-date');
+
+    cfgModeSelect.addEventListener('change', () => {
+      if (cfgModeSelect.value === 'custom') {
+        cfgDateInput.classList.remove('hidden');
+      } else {
+        cfgDateInput.classList.add('hidden');
+      }
+    });
+
+    function closeCustomizeModal() {
+      customizeModal.classList.add('hidden');
+      customizeModal.classList.remove('flex');
+    }
+
+    document.getElementById('close-customize-btn').addEventListener('click', closeCustomizeModal);
+    document.getElementById('cancel-customize-btn').addEventListener('click', closeCustomizeModal);
+
+    document.getElementById('save-customize-btn').addEventListener('click', () => {
+      const newTitle = document.getElementById('cfg-hero-title').value.trim();
+      const newSalutation = document.getElementById('cfg-salutation').value.trim();
+      const newLetter = document.getElementById('cfg-letter-body').value.trim();
+
+      if (newTitle) {
+        appState.heroTitle = newTitle;
+        document.getElementById('s1-headline-main').textContent = newTitle;
+      }
+      if (newSalutation) appState.salutation = newSalutation;
+      if (newLetter) appState.letterBody = newLetter;
+
+      appState.countdownMode = cfgModeSelect.value;
+      if (appState.countdownMode === 'custom' && cfgDateInput.value) {
+        appState.customTargetTime = new Date(cfgDateInput.value).getTime();
+      }
+
+      closeCustomizeModal();
+
+      // Reset to Screen 1 cleanly
+      startCountdown();
+      goToScreen(1);
+    });
+
+    /* ==========================================================================
+       9. INITIALIZE ON LOAD
+       ========================================================================== */
+    window.addEventListener('DOMContentLoaded', () => {
+      startCountdown();
+    });
+  </script>
+</body>
+</html>
